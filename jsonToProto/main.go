@@ -5,31 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"study/Registry"
 )
 
-const Value = `{
-  "ret":0,   // 返回状态码，0表示正式，其他表示错误
-  "msg":"success", // 额外的信息，当有错误时为错误信息
-  "study":{
-    "day1": 1,
-    "day2": 2,
-    "day3": "test"
-  },
-    "test":{
-    "1" : "1",
-    "2" : "2",
-    },
-    "slice":[
-    {
-    "test1":1,
-    "test2":2
-    }
-    ]
-}`
-
 func main() {
-	value := Registry.RemoveJSONComment(Value)
+
+	Value, err := os.ReadFile("test.json")
+	if err != nil {
+		panic("读取文件失败")
+	}
+	value := Registry.RemoveJSONComment(string(Value))
 	//fmt.Printf("清理后的 JSON:\n%q\n", value)
 
 	fmt.Println(value)
@@ -44,7 +30,6 @@ func main() {
 	}
 	fmt.Printf("%T\n", data)
 	registry := Registry.NewTypeRegistry()
-	Registry.ProcessValue(data, registry, "json_to_proto ")
-	file := Registry.GenerateProtoFile(registry)
-	fmt.Println(file, "----------file")
+	Registry.ProcessValue(data, registry, "json_to_proto")
+	Registry.GenerateProtoFile(registry, "json_to.proto")
 }

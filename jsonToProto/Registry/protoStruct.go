@@ -2,6 +2,7 @@ package Registry
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -15,8 +16,10 @@ type ProtoField struct {
 	Tag  int
 }
 
-func GenerateProtoFile(registry *TypeRegistry) string {
+func GenerateProtoFile(registry *TypeRegistry, suggestedName string) string {
 	var builder strings.Builder
+	builder.WriteString("syntax = \"proto3\";\n\n")
+	builder.WriteString("package example;\n\n")
 	// 输出所有消息
 	for _, msg := range registry.types {
 		builder.WriteString(fmt.Sprintf("message %s {\n", msg.Name))
@@ -25,5 +28,11 @@ func GenerateProtoFile(registry *TypeRegistry) string {
 		}
 		builder.WriteString("}\n\n")
 	}
+
+	file, err := os.OpenFile(suggestedName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		panic("打开文件失败")
+	}
+	file.WriteString(builder.String())
 	return builder.String()
 }

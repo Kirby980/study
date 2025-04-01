@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package example;
+
+message Study {
+  int32 day1 = 1;
+  int32 day2 = 2;
+  string day3 = 3;
+}
+
+message Slice {
+  int32 test1 = 1;
+  int32 test2 = 2;
+}
+
+message Json_to_proto {
+  string msg = 1;
+  int32 ret = 2;
+  repeated Slice slice = 3;
+  Study study = 4;
+  map<string,string> test = 5;
+}
+
