@@ -3,6 +3,7 @@ package Registry
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 

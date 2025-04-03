@@ -2,8 +2,9 @@ package slice_test
 
 import (
 	"fmt"
-	"study/study1/slice"
 	"testing"
+
+	"github.com/Kirby980/study/study1/slice"
 )
 
 func TestSlice(t *testing.T) {
