@@ -27,7 +27,7 @@ func Test_jsonToProto(t *testing.T) {
 	registry := Registry.NewTypeRegistry()
 	processValue := Registry.ProcessValueV2(orderedValue, registry, "json_to_proto")
 	fmt.Println(processValue)
-	file := Registry.GenerateProtoFile(registry, "json_to_proto")
+	file := Registry.GenerateProtoFile(registry, "json_to.proto")
 	fmt.Println(file)
 
 }
