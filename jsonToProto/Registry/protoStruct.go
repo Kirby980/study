@@ -35,7 +35,7 @@ func GenerateProtoFile(registry *TypeRegistry, suggestedName string) string {
 		builder.WriteString("}\n\n")
 	}
 
-	file, err := os.OpenFile(suggestedName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	file, err := os.OpenFile(suggestedName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		panic("打开文件失败")
 	}
