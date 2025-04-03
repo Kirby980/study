@@ -20,6 +20,11 @@ func GenerateProtoFile(registry *TypeRegistry, suggestedName string) string {
 	var builder strings.Builder
 	builder.WriteString("syntax = \"proto3\";\n\n")
 	builder.WriteString("package example;\n\n")
+	names := make([]string, 0, len(registry.types))
+	for name := range registry.types {
+		names = append(names, name)
+	}
+	sort.Strings(names)
 	// 输出所有消息
 	for _, msg := range registry.types {
 		builder.WriteString(fmt.Sprintf("message %s {\n", msg.Name))
