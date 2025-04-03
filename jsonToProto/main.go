@@ -17,7 +17,19 @@ func main() {
 	}
 	value := Registry.RemoveJSONComment(string(Value))
 	//fmt.Printf("清理后的 JSON:\n%q\n", value)
-
+	orderedValue, err := Registry.ParseJson(value)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	registry := Registry.NewTypeRegistry()
+	processValue := Registry.ProcessValueV2(orderedValue, registry, "json_to_proto")
+	fmt.Println(processValue)
+	file := Registry.GenerateProtoFile(registry, "json_to_proto")
+	fmt.Println(file)
+	
+}
+func UnOrderV1(value string){
 	fmt.Println(value)
 	var data any
 	decoder := json.NewDecoder(bytes.NewReader([]byte(value)))
@@ -33,3 +45,4 @@ func main() {
 	Registry.ProcessValue(data, registry, "json_to_proto")
 	Registry.GenerateProtoFile(registry, "json_to.proto")
 }
+	
