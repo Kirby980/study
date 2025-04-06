@@ -43,3 +43,8 @@ sudo tee /etc/docker/daemon.json <<EOF
 }
 sudo systemctl daemon-reload
 sudo systemctl restart docker
+
+# Install nodejs && typescript
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+sudo npm install -g typescript
