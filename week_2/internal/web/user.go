@@ -129,9 +129,49 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
-
+	type Req struct {
+		Nickname string `json:"nick_name"`
+		Email    string `json:"email"`
+		Birthday string `json:"birthday"`
+		Profile  string `json:"profile"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	sess := sessions.Default(ctx)
+	id := sess.Get("userId")
+	if id == nil {
+		ctx.String(http.StatusOK, "请登录")
+		return
+	}
+	// 这里应该是更新用户信息
+	err := h.svc.Edit(ctx, domain.User{
+		Id:       id.(int64),
+		Nickname: req.Nickname,
+		Email:    req.Email,
+		Birthday: req.Birthday,
+		Profile:  req.Profile,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	ctx.String(http.StatusOK, "更新成功")
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "这是 profile")
+	sess := sessions.Default(ctx)
+	id := sess.Get("userId")
+	if id == nil {
+		ctx.String(http.StatusOK, "请登录")
+		return
+	}
+	user, err := h.svc.Select(ctx, id.(int64))
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	ctx.JSON(http.StatusOK, user)
 }

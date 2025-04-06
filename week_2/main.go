@@ -58,7 +58,7 @@ func initWebServer() *gin.Engine {
 		//AllowHeaders: []string{"content-type"},
 		//AllowMethods: []string{"POST"},
 		AllowOriginFunc: func(origin string) bool {
-			if strings.HasPrefix(origin, "http://192.168.3.97") {
+			if strings.HasPrefix(origin, "http://192.168.3.97") || strings.HasPrefix(origin, "http://localhost") {
 				//if strings.Contains(origin, "localhost") {
 				return true
 			}
@@ -73,6 +73,6 @@ func initWebServer() *gin.Engine {
 	// 存储数据的，也就是你 userId 存哪里
 	// 直接存 cookie
 	store := cookie.NewStore([]byte("secret"))
-	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
+	server.Use(sessions.Sessions("ssid", store), login.IgnorePaths("/users/login").IgnorePaths("/users/signup").Build())
 	return server
 }

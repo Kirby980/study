@@ -44,12 +44,24 @@ func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error)
 	err := dao.db.WithContext(ctx).Where("email=?", email).First(&u).Error
 	return u, err
 }
+func (dao *UserDAO) Edit(ctx context.Context, u User) error {
+	err := dao.db.WithContext(ctx).Updates(&u).Error
+	return err
+}
+
+func (dao *UserDAO) FindByID(ctx context.Context, id int64) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("id=?", id).First(&u).Error
+	return u, err
+}
 
 type User struct {
 	Id       int64  `gorm:"primaryKey,autoIncrement"`
 	Email    string `gorm:"unique"`
 	Password string
-
+	Nickname string `gorm:"column:nick_name"`
+	Birthday string
+	Profile  string
 	// 时区，UTC 0 的毫秒数
 	// 创建时间
 	Ctime int64
