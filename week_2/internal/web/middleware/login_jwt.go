@@ -1,16 +1,17 @@
 package middleware
 
 import (
-	"encoding/gob"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/Kirby980/study/week_2/internal/web"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// LoginMiddlewareBuilder 扩展性
+// LoginJWTMiddlewareBuilder 扩展性
 type LoginJWTMiddlewareBuilder struct {
 	paths []string
 }
@@ -24,8 +25,6 @@ func (l *LoginJWTMiddlewareBuilder) IgnorePaths(path string) *LoginJWTMiddleware
 }
 
 func (l *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
-	// 用 Go 的方式编码解码
-	gob.Register(time.Now())
 	return func(ctx *gin.Context) {
 		// 不需要登录校验的
 		for _, path := range l.paths {
@@ -48,16 +47,37 @@ func (l *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
 			return
 		}
 		tokenString := segs[1]
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// 	return []byte("95osj3fUD7fo0mlYdDbncXz4VD2igvf0"), nil
+		// })
+		claims := &web.UserClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return []byte("95osj3fUD7fo0mlYdDbncXz4VD2igvf0"), nil
 		})
 		if err != nil {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		if token == nil || token.Valid {
+		if token == nil || !token.Valid {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		if claims.UserAgent != ctx.Request.UserAgent() {
+			// 严重的安全问题
+			// 你是要监控
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		now := time.Now()
+		if claims.ExpiresAt.Sub(now) < time.Second*50 {
+			claims.ExpiresAt = jwt.NewNumericDate(now.Add(time.Minute))
+			tokenString, err = token.SignedString([]byte("95osj3fUD7fo0mlYdDbncXz4VD2igvf0"))
+			if err != nil {
+				log.Println("jwt 续约失败", err)
+				return
+			}
+			ctx.Header("x-jwt-token", tokenString)
+		}
+		ctx.Set("claims", claims)
 	}
 }

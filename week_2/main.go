@@ -9,33 +9,108 @@ import (
 	"github.com/Kirby980/study/week_2/internal/service"
 	"github.com/Kirby980/study/week_2/internal/web"
 	"github.com/Kirby980/study/week_2/internal/web/middleware"
+	"github.com/Kirby980/study/week_2/pkg/ginx/middlewares/ratelimit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 func main() {
 	db := initDB()
-
 	server := initWebServer()
-	initUserHdl(db, server)
+
+	u := initUser(db)
+	u.RegisterRoutes(server)
+
 	server.Run(":8080")
 }
 
-func initUserHdl(db *gorm.DB, server *gin.Engine) {
+func initWebServer() *gin.Engine {
+	server := gin.Default()
+
+	server.Use(func(ctx *gin.Context) {
+		println("这是第一个 middleware")
+	})
+
+	server.Use(func(ctx *gin.Context) {
+		println("这是第二个 middleware")
+	})
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "192.168.3.97:6379",
+	})
+	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+
+	server.Use(cors.New(cors.Config{
+		//AllowOrigins: []string{"*"},
+		//AllowMethods: []string{"POST", "GET"},
+		AllowHeaders: []string{"Content-Type", "Authorization"},
+		// 你不加这个，前端是拿不到的
+		ExposeHeaders: []string{"x-jwt-token"},
+		// 是否允许你带 cookie 之类的东西
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			if strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://192.168.3.97") {
+				// 你的开发环境
+				return true
+			}
+			return strings.Contains(origin, "yourcompany.com")
+		},
+		MaxAge: 12 * time.Hour,
+	}))
+
+	// 步骤1
+	//store := cookie.NewStore([]byte("secret"))
+
+	store := memstore.NewStore([]byte("95osj3fUD7fo0mlYdDbncXz4VD2igvf0"),
+		[]byte("0Pf2r0wZBpXVXlQNdpwCXN4ncnlnZSc3"))
+	//store, err := redis.NewStore(16,
+	//	"tcp", "localhost:6379", "",
+	//	[]byte("95osj3fUD7fo0mlYdDbncXz4VD2igvf0"), []byte("0Pf2r0wZBpXVXlQNdpwCXN4ncnlnZSc3"))
+	//
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	//myStore := &sqlx_store.Store{}
+
+	server.Use(sessions.Sessions("mysession", store))
+	// 步骤3
+	//server.Use(middleware.NewLoginMiddlewareBuilder().
+	//	IgnorePaths("/users/signup").
+	//	IgnorePaths("/users/login").Build())
+	server.Use(middleware.NewLoginJWTMiddlewareBuilder().
+		IgnorePaths("/users/signup").
+		IgnorePaths("/users/login").Build())
+
+	// v1
+	//middleware.IgnorePaths = []string{"sss"}
+	//server.Use(middleware.CheckLogin())
+
+	// 不能忽略sss这条路径
+	//server1 := gin.Default()
+	//server1.Use(middleware.CheckLogin())
+	return server
+}
+
+func initUser(db *gorm.DB) *web.UserHandler {
 	ud := dao.NewUserDAO(db)
-	ur := repository.NewUserRepository(ud)
-	us := service.NewUserService(ur)
-	hdl := web.NewUserHandler(us)
-	hdl.RegisterRoutes(server)
+	repo := repository.NewUserRepository(ud)
+	svc := service.NewUserService(repo)
+	u := web.NewUserHandler(svc)
+	return u
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
+	db, err := gorm.Open(mysql.Open("root:root@tcp(192.168.3.97:13316)/webook"))
 	if err != nil {
+		// 我只会在初始化过程中 panic
+		// panic 相当于整个 goroutine 结束
+		// 一旦初始化过程出错，应用就不要启动了
 		panic(err)
 	}
 
@@ -44,45 +119,4 @@ func initDB() *gorm.DB {
 		panic(err)
 	}
 	return db
-}
-
-func initWebServer() *gin.Engine {
-	server := gin.Default()
-
-	server.Use(cors.New(cors.Config{
-		//AllowAllOrigins: true,
-		//AllowOrigins:     []string{"http://localhost:3000"},
-		AllowCredentials: true,
-		ExposeHeaders:    []string{"x-jwt-token"},
-		AllowHeaders:     []string{"Content-Type", "authorization"},
-		//AllowHeaders: []string{"content-type"},
-		//AllowMethods: []string{"POST"},
-		AllowOriginFunc: func(origin string) bool {
-			if strings.HasPrefix(origin, "http://192.168.3.97") || strings.HasPrefix(origin, "http://localhost") {
-				//if strings.Contains(origin, "localhost") {
-				return true
-			}
-			return strings.Contains(origin, "your_company.com")
-		},
-		MaxAge: 12 * time.Hour,
-	}), func(ctx *gin.Context) {
-		println("这是我的 Middleware")
-	})
-
-	// 存储数据的，也就是你 userId 存哪里
-	// 直接存 cookie
-	//store := cookie.NewStore([]byte("secret"))
-	//基于内存的实现
-	//store := memstore.NewStore([]byte("secret"))
-	//存到redis
-	store, err := redis.NewStore(16, "tcp", "192.168.3.97:6379", "", "", []byte("k6CswdUm75WKcbM68UQUuxVsHSpTCwgK"), []byte("k6CswdUm75WKcbM68UQUuxVsHSpTCwgA"))
-	if err != nil {
-		panic(err)
-	}
-	//未使用jwt
-	//server.Use(sessions.Sessions("ssid", store), login.IgnorePaths("/users/login").IgnorePaths("/users/signup").Build())
-	// 使用jwt
-	server.Use(sessions.Sessions("ssid", store), middleware.NewLoginJWTMiddlewareBuilder().
-		IgnorePaths("/users/signuo").IgnorePaths("/users/login").Build())
-	return server
 }

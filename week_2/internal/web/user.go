@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Kirby980/study/week_2/internal/domain"
 	"github.com/Kirby980/study/week_2/internal/service"
@@ -47,7 +48,9 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	// POST /users/edit
 	ug.POST("/edit", h.Edit)
 	// GET /users/profile
-	ug.GET("/profile", h.Profile)
+	ug.GET("/profile", h.ProfileJWT)
+	//ug.GET("/profile", h.Profile)
+
 }
 
 func (h *UserHandler) SignUp(ctx *gin.Context) {
@@ -144,7 +147,15 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	u, err := h.svc.Login(ctx, req.Email, req.Password)
 	switch err {
 	case nil:
-		token := jwt.New(jwt.SigningMethodHS512)
+		//token := jwt.New(jwt.SigningMethodHS512)
+		claims := UserClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+			},
+			Uid:       u.Id,
+			UserAgent: ctx.Request.UserAgent(),
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 		tokenStr, err := token.SignedString([]byte("95osj3fUD7fo0mlYdDbncXz4VD2igvf0"))
 		if err != nil {
 			ctx.String(http.StatusOK, "系统错误")
@@ -205,4 +216,26 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, user)
+}
+func (h *UserHandler) ProfileJWT(ctx *gin.Context) {
+	//sess := sessions.Default(ctx)
+	//id := sess.Get("userId")
+	c, _ := ctx.Get("claims")
+	claims, ok := c.(*UserClaims)
+	if !ok {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	user, err := h.svc.Select(ctx, claims.Uid)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	ctx.JSON(http.StatusOK, user)
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	Uid       int64
+	UserAgent string
 }
