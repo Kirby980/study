@@ -41,6 +41,7 @@ sudo tee /etc/docker/daemon.json <<EOF
         "https://docker.xuanyuan.me"
     ]
 }
+EOF
 sudo systemctl daemon-reload
 sudo systemctl restart docker
 
@@ -48,3 +49,18 @@ sudo systemctl restart docker
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs
 sudo npm install -g typescript
+
+# Install docker
+# https://kubernetes.io/zh-cn/docs/tasks/tools/install-kubectl-linux/#install-kubectl-binary-with-curl-on-linux
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
+kubectl version --client --output=yaml
+
+# package main.go
+cd ~/study/week_2   
+GOOS=linux GOARCH=arm go build -o webook
+docker build -t Kirby980/webook:v0.0.1 .
