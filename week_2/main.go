@@ -11,7 +11,7 @@ import (
 	"github.com/Kirby980/study/week_2/internal/web/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -53,8 +53,8 @@ func initWebServer() *gin.Engine {
 		//AllowAllOrigins: true,
 		//AllowOrigins:     []string{"http://localhost:3000"},
 		AllowCredentials: true,
-
-		AllowHeaders: []string{"Content-Type", "authorization"},
+		ExposeHeaders:    []string{"x-jwt-token"},
+		AllowHeaders:     []string{"Content-Type", "authorization"},
 		//AllowHeaders: []string{"content-type"},
 		//AllowMethods: []string{"POST"},
 		AllowOriginFunc: func(origin string) bool {
@@ -69,10 +69,20 @@ func initWebServer() *gin.Engine {
 		println("这是我的 Middleware")
 	})
 
-	login := &middleware.LoginMiddlewareBuilder{}
 	// 存储数据的，也就是你 userId 存哪里
 	// 直接存 cookie
-	store := cookie.NewStore([]byte("secret"))
-	server.Use(sessions.Sessions("ssid", store), login.IgnorePaths("/users/login").IgnorePaths("/users/signup").Build())
+	//store := cookie.NewStore([]byte("secret"))
+	//基于内存的实现
+	//store := memstore.NewStore([]byte("secret"))
+	//存到redis
+	store, err := redis.NewStore(16, "tcp", "192.168.3.97:6379", "", "", []byte("k6CswdUm75WKcbM68UQUuxVsHSpTCwgK"), []byte("k6CswdUm75WKcbM68UQUuxVsHSpTCwgA"))
+	if err != nil {
+		panic(err)
+	}
+	//未使用jwt
+	//server.Use(sessions.Sessions("ssid", store), login.IgnorePaths("/users/login").IgnorePaths("/users/signup").Build())
+	// 使用jwt
+	server.Use(sessions.Sessions("ssid", store), middleware.NewLoginJWTMiddlewareBuilder().
+		IgnorePaths("/users/signuo").IgnorePaths("/users/login").Build())
 	return server
 }

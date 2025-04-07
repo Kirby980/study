@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Kirby980/study/week_2/internal/domain"
@@ -8,6 +9,7 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -39,7 +41,9 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	// POST /users/signup
 	ug.POST("/signup", h.SignUp)
 	// POST /users/login
-	ug.POST("/login", h.Login)
+	//ug.POST("/login", h.Login)
+	ug.POST("/login", h.LoginJWT)
+
 	// POST /users/edit
 	ug.POST("/edit", h.Edit)
 	// GET /users/profile
@@ -128,6 +132,33 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	}
 }
 
+func (h *UserHandler) LoginJWT(ctx *gin.Context) {
+	type Req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	u, err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+		token := jwt.New(jwt.SigningMethodHS512)
+		tokenStr, err := token.SignedString([]byte("95osj3fUD7fo0mlYdDbncXz4VD2igvf0"))
+		if err != nil {
+			ctx.String(http.StatusOK, "系统错误")
+			return
+		}
+		ctx.Header("x-jwt-token", tokenStr)
+		fmt.Println(u)
+		ctx.String(http.StatusOK, "登录成功")
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusOK, "用户名或者密码不对")
+	default:
+		ctx.String(http.StatusOK, "系统错误")
+	}
+}
 func (h *UserHandler) Edit(ctx *gin.Context) {
 	type Req struct {
 		Nickname string `json:"nick_name"`
