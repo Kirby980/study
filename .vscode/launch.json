@@ -5,13 +5,14 @@
 
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Debug jsonToProto",  // 自定义调试名称
             "type": "go",
             "request": "launch",
             "mode": "debug",            // 调试模式
-            "program": "/root/study/study/jsonToProto",  // 你的项目绝对路径
-            "cwd": "/root/study/study/jsonToProto",      // 工作目录
+            "program": "/root/study/week_2/",  // 你的项目绝对路径
+            "cwd": "/root/study/week_2/",      // 工作目录
             "args": [],                  // 可添加命令行参数
             "env": {},                    // 可添加环境变量
             "buildFlags": "",             // 可添加构建参数
