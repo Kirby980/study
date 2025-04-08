@@ -1,0 +1,20 @@
+# IPAddressPool 示例（v1beta1 API）
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.3.200-192.168.3.220  # 需与宿主机同网段
+  autoAssign: true
+---
+# L2Advertisement 关联配置
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: l2-advert
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-pool

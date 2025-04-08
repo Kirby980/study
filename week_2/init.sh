@@ -50,7 +50,7 @@ curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs
 sudo npm install -g typescript
 
-# Install docker
+# Install kubernetes
 # https://kubernetes.io/zh-cn/docs/tasks/tools/install-kubectl-linux/#install-kubectl-binary-with-curl-on-linux
 
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -59,8 +59,28 @@ echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 kubectl version --client
 kubectl version --client --output=yaml
+# if did you specify the right host or port?
+# Install minikube
+# https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download
+curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+minikube start --driver=none
 
-# package main.go
+# 由于虚拟机非云主机不支持LoadBalancer,可以安装MetalLB部署
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
+kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+#添加metallb-config.yaml 配置文件
+kubectl apply -f metallb-config.yaml
+# 数据如下: 可以通过访问192.168.3.200
+# get services -o wide 
+# NAME         TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE   SELECTOR
+# kubernetes   ClusterIP      10.96.0.1     <none>          443/TCP        62m   <none>
+# webook       LoadBalancer   10.108.93.3   192.168.3.200   81:30697/TCP   15m   app=webook
+
+
+# package main.go arm框架
 cd ~/study/week_2   
 GOOS=linux GOARCH=arm go build -o webook
+#x86_64框架
+#CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o webook .
 docker build -t Kirby980/webook:v0.0.1 .
