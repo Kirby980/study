@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata: 
-  name: webook-reids 
+  name: webook-redis 
 spec:
   selector:
-    app: webook-reids
+    app: webook-redis
   ports:
     - protocol: TCP
       port: 11479
