@@ -21,12 +21,11 @@ import (
 )
 
 func main() {
-	//db := initDB()
-	//server := initWebServer()
+	db := initDB()
+	server := initWebServer()
 
-	//u := initUser(db)
-	//u.RegisterRoutes(server)
-	server := gin.Default()
+	u := initUser(db)
+	u.RegisterRoutes(server)
 	server.GET("/hello", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "你好，你来了")
 	})
@@ -45,7 +44,7 @@ func initWebServer() *gin.Engine {
 	})
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "192.168.3.97:16379",
+		Addr: "webook-redis:11479",
 	})
 	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
@@ -58,11 +57,11 @@ func initWebServer() *gin.Engine {
 		// 是否允许你带 cookie 之类的东西
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
-			if strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://192.168.3.97") {
+			if strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://192.168.3.97") || strings.HasPrefix(origin, "http://192.168.3.200") {
 				// 你的开发环境
 				return true
 			}
-			return strings.Contains(origin, "yourcompany.com")
+			return strings.Contains(origin, "webook.com")
 		},
 		MaxAge: 12 * time.Hour,
 	}))
@@ -110,7 +109,7 @@ func initUser(db *gorm.DB) *web.UserHandler {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(192.168.3.97:13316)/webook"))
+	db, err := gorm.Open(mysql.Open("root:root@tcp(webook-mysql:13306)/webook"))
 	if err != nil {
 		// 我只会在初始化过程中 panic
 		// panic 相当于整个 goroutine 结束

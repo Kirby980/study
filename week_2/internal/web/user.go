@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -162,7 +161,6 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 			return
 		}
 		ctx.Header("x-jwt-token", tokenStr)
-		fmt.Println(u)
 		ctx.String(http.StatusOK, "登录成功")
 	case service.ErrInvalidUserOrPassword:
 		ctx.String(http.StatusOK, "用户名或者密码不对")
