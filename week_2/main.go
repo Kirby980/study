@@ -7,12 +7,14 @@ import (
 
 	"github.com/Kirby980/study/week_2/config"
 	"github.com/Kirby980/study/week_2/internal/repository"
+	"github.com/Kirby980/study/week_2/internal/repository/cache"
 	"github.com/Kirby980/study/week_2/internal/repository/dao"
 	"github.com/Kirby980/study/week_2/internal/service"
 	"github.com/Kirby980/study/week_2/internal/web"
 	"github.com/Kirby980/study/week_2/internal/web/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -20,8 +22,8 @@ import (
 func main() {
 	db := initDB()
 	server := initWebServer()
-
-	u := initUser(db)
+	r := initRedis()
+	u := initUser(db, r)
 	u.RegisterRoutes(server)
 	server.GET("/hello", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "你好，你来了")
@@ -97,12 +99,19 @@ func initWebServer() *gin.Engine {
 	return server
 }
 
-func initUser(db *gorm.DB) *web.UserHandler {
+func initUser(db *gorm.DB, r redis.Cmdable) *web.UserHandler {
 	ud := dao.NewUserDAO(db)
-	repo := repository.NewUserRepository(ud)
+	ca := cache.NewUserCache(r)
+	repo := repository.NewUserRepository(ud, ca)
 	svc := service.NewUserService(repo)
 	u := web.NewUserHandler(svc)
 	return u
+}
+func initRedis() redis.Cmdable {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	})
+	return redisClient
 }
 
 func initDB() *gorm.DB {

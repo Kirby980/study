@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/Kirby980/study/week_2/internal/domain"
+	"github.com/Kirby980/study/week_2/internal/repository/cache"
 	"github.com/Kirby980/study/week_2/internal/repository/dao"
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 var (
@@ -14,12 +16,14 @@ var (
 )
 
 type UserRepository struct {
-	dao *dao.UserDAO
+	dao   *dao.UserDAO
+	cache *cache.UserCache
 }
 
-func NewUserRepository(dao *dao.UserDAO) *UserRepository {
+func NewUserRepository(dao *dao.UserDAO, c *cache.UserCache) *UserRepository {
 	return &UserRepository{
-		dao: dao,
+		dao:   dao,
+		cache: c,
 	}
 }
 
@@ -49,11 +53,22 @@ func (repo *UserRepository) Update(ctx context.Context, user domain.User) error 
 	return err
 }
 func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
-	u, err := repo.dao.FindByID(ctx, id)
+	u, err := repo.cache.Get(ctx, id)
+	if err == nil {
+		return u, nil
+	}
+	ue, err := repo.dao.FindByID(ctx, id)
 	if err != nil {
 		return domain.User{}, err
 	}
-	return repo.toDomain(u), nil
+	u = repo.toDomain(ue)
+	go func() {
+		repo.cache.Set(ctx, u)
+		if err != nil {
+			log.Debug("设置缓存失败")
+		}
+	}()
+	return u, err
 }
 
 func (repo *UserRepository) toDomain(u dao.User) domain.User {
