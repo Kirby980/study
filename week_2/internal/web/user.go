@@ -149,7 +149,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 		//token := jwt.New(jwt.SigningMethodHS512)
 		claims := UserClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
 			},
 			Uid:       u.Id,
 			UserAgent: ctx.Request.UserAgent(),

@@ -90,3 +90,20 @@ GOOS=linux GOARCH=arm go build -o webook
 #x86_64框架
 #CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o webook .
 docker build -t Kirby980/webook:v0.0.1 .
+
+# Install wrk
+sudo apt install -y wrk
+#执行命令， -t表示进程数，-c表示连接数，-d表示持续时间，-s表示脚本文件
+wrk -t1 -d1s -c1 -s ./scripts/wrk/signup.lua http://192.168.3.97:8080/users/signup
+# 结果如下
+#wrk -t1 -d1s -c10 -s ./scripts/wrk/signup.lua http://192.168.3.97:8080/users/signup
+# Running 1s test @ http://192.168.3.97:8080/users/signup
+#   1 threads and 10 connections
+#   Thread Stats   Avg      Stdev     Max   +/- Stdev
+#     Latency   118.00ms   20.38ms 179.12ms   74.36%
+#     Req/Sec    80.11     18.64   100.00     55.56%
+#   78 requests in 1.01s, 10.02KB read
+# Requests/sec:     77.31
+# Transfer/sec:      9.93KB
+# Avg 平均响应时间，Stdev 标准差，Max 最大响应时间，+/- Stdev 74.36% 
+# Req/Sec 每秒请求数，Transfer/sec 每秒传输数据量
