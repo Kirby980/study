@@ -78,12 +78,13 @@ kubectl apply -f metallb-config.yaml
 # webook       LoadBalancer   10.108.93.3   192.168.3.200   81:30697/TCP   15m   app=webook
 
 # Install helm 
+# 用于部署k8s-ingress 
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm install ingress-nginx ingress-nginx/ingress-nginx   --namespace ingress-nginx   --create-namespace
 # 后续跟普通的k8s服务一样 通过kubectl apply -f 启动
 
-# package main.go arm框架
+# package main.go ard框架
 cd ~/study/week_2   
 GOOS=linux GOARCH=arm go build -o webook
 #x86_64框架
