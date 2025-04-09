@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Kirby980/study/week_2/config"
 	"github.com/Kirby980/study/week_2/internal/repository"
 	"github.com/Kirby980/study/week_2/internal/repository/dao"
 	"github.com/Kirby980/study/week_2/internal/service"
@@ -44,7 +45,7 @@ func initWebServer() *gin.Engine {
 	})
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "webook-redis:11479",
+		Addr: config.Config.Redis.Addr,
 	})
 	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
@@ -109,7 +110,7 @@ func initUser(db *gorm.DB) *web.UserHandler {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(webook-mysql:13306)/webook"))
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
 	if err != nil {
 		// 我只会在初始化过程中 panic
 		// panic 相当于整个 goroutine 结束
