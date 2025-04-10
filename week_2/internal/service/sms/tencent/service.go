@@ -41,9 +41,9 @@ func (s *Service) Send(ctx context.Context, tplId string, args []string, number 
 }
 
 func (s *Service) toStringPtrString(src []string) []*string {
-	ptrStr := make([]*string, 0, len(src))
-	for _, v := range src {
-		ptrStr = append(ptrStr, &v)
+	ptrStr := make([]*string, len(src))
+	for i, s := range src {
+		ptrStr[i] = &s
 	}
 	return ptrStr
 }
