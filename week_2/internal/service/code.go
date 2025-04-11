@@ -33,7 +33,7 @@ func (svc *CodeService) Send(ctx context.Context, biz, phone string) error {
 	return err
 }
 
-func (svc *CodeService) Verify(ctx context.Context, biz, phone, inputCode string) error {
+func (svc *CodeService) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
 	return svc.repo.Verify(ctx, biz, phone, inputCode)
 }
 func (svc *CodeService) generateCode() string {

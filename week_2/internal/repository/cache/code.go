@@ -46,7 +46,7 @@ func (c *CodeCache) Set(ctx context.Context, biz, phone, code string) error {
 	}
 }
 func (c *CodeCache) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
-	res, err := c.client.Eval(ctx, luaVerifyCode, []string{c.key(biz, phone), inputCode}).Int()
+	res, err := c.client.Eval(ctx, luaVerifyCode, []string{c.key(biz, phone)}, inputCode).Int()
 	if err != nil {
 		return false, err
 	}
@@ -54,9 +54,12 @@ func (c *CodeCache) Verify(ctx context.Context, biz, phone, inputCode string) (b
 	case 0:
 		return true, nil
 	case -1:
+		// 正常来说，如果频繁出现这个错误，你就要告警，因为有人搞你
 		return false, ErrCodeVerifyTooManyTimes
 	case -2:
 		return false, nil
+		//default:
+		//	return false, ErrUnknownForCode
 	}
 	return false, ErrUnknownForCode
 }

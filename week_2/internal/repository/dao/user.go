@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"time"
 
@@ -10,8 +11,8 @@ import (
 )
 
 var (
-	ErrDuplicateEmail = errors.New("邮箱冲突")
-	ErrRecordNotFound = gorm.ErrRecordNotFound
+	ErrUserDuplicate = errors.New("邮箱冲突")
+	ErrUserNotFound  = gorm.ErrRecordNotFound
 )
 
 type UserDAO struct {
@@ -33,7 +34,7 @@ func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 		const duplicateErr uint16 = 1062
 		if me.Number == duplicateErr {
 			// 用户冲突，邮箱冲突
-			return ErrDuplicateEmail
+			return ErrUserNotFound
 		}
 	}
 	return err
@@ -42,6 +43,11 @@ func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("email=?", email).First(&u).Error
+	return u, err
+}
+func (dao *UserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
 	return u, err
 }
 func (dao *UserDAO) Edit(ctx context.Context, u User) error {
@@ -56,10 +62,13 @@ func (dao *UserDAO) FindByID(ctx context.Context, id int64) (User, error) {
 }
 
 type User struct {
-	Id       int64  `gorm:"primaryKey,autoIncrement"`
-	Email    string `gorm:"unique"`
+	Id       int64          `gorm:"primaryKey,autoIncrement"`
+	Email    sql.NullString `gorm:"unique"`
 	Password string
-	Nickname string `gorm:"column:nick_name"`
+	// 唯一索引允许有多个空值
+	// 但是不能有多个 ""
+	Phone    sql.NullString `gorm:"unique"`
+	Nickname string         `gorm:"column:nick_name"`
 	Birthday string
 	Profile  string
 	// 时区，UTC 0 的毫秒数
