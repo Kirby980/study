@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	biz               = "login_sms"
 	emailRegexPattern = "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"
 	// 和上面比起来，用 ` 看起来就比较清爽
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
@@ -21,13 +22,15 @@ const (
 type UserHandler struct {
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
+	codeSvc        *service.CodeService
 	svc            *service.UserService
 }
 
-func NewUserHandler(svc *service.UserService) *UserHandler {
+func NewUserHandler(svc *service.UserService, codeSvc *service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRexExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRexExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
+		codeSvc:        codeSvc,
 		svc:            svc,
 	}
 }
@@ -49,7 +52,35 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	// GET /users/profile
 	ug.GET("/profile", h.ProfileJWT)
 	//ug.GET("/profile", h.Profile)
+	ug.POST("/login_sms/code/send", h.SendLoginSmsCode)
+	ug.POST("/login_sms", h.LoginSms)
 
+}
+func (h *UserHandler) SendLoginSmsCode(ctx *gin.Context) {
+	type Req struct {
+		Phone string `json:"phone"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	if err := h.codeSvc.Send(ctx, biz, req.Phone); err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "发送成功",
+	})
+
+}
+
+func (h *UserHandler) LoginSms(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "登陆成功"},
+	)
 }
 
 func (h *UserHandler) SignUp(ctx *gin.Context) {

@@ -10,6 +10,7 @@ import (
 	"github.com/Kirby980/study/week_2/internal/repository/cache"
 	"github.com/Kirby980/study/week_2/internal/repository/dao"
 	"github.com/Kirby980/study/week_2/internal/service"
+	"github.com/Kirby980/study/week_2/internal/service/sms/memory"
 	"github.com/Kirby980/study/week_2/internal/web"
 	"github.com/Kirby980/study/week_2/internal/web/middleware"
 	"github.com/gin-contrib/cors"
@@ -87,6 +88,8 @@ func initWebServer() *gin.Engine {
 	//	IgnorePaths("/users/login").Build())
 	server.Use(middleware.NewLoginJWTMiddlewareBuilder().
 		IgnorePaths("/users/signup").
+		IgnorePaths("/users/login_sms/code/send").
+		IgnorePaths("/users/login_sms").
 		IgnorePaths("/users/login").Build())
 
 	// v1
@@ -101,10 +104,14 @@ func initWebServer() *gin.Engine {
 
 func initUser(db *gorm.DB, r redis.Cmdable) *web.UserHandler {
 	ud := dao.NewUserDAO(db)
-	ca := cache.NewUserCache(r)
-	repo := repository.NewUserRepository(ud, ca)
+	uc := cache.NewUserCache(r)
+	repo := repository.NewUserRepository(ud, uc)
 	svc := service.NewUserService(repo)
-	u := web.NewUserHandler(svc)
+	ca := cache.NEwCodeCache(r)
+	codeRepo := repository.NewCodeRepository(ca)
+	smsSvc := memory.NewService()
+	codeSvc := service.NewCodeService(codeRepo, smsSvc)
+	u := web.NewUserHandler(svc, codeSvc)
 	return u
 }
 func initRedis() redis.Cmdable {

@@ -16,6 +16,13 @@ type CodeService struct {
 	smsSvc sms.Service
 }
 
+func NewCodeService(repo *repository.CodeRepository, smsSvc sms.Service) *CodeService {
+	return &CodeService{
+		repo:   repo,
+		smsSvc: smsSvc,
+	}
+}
+
 func (svc *CodeService) Send(ctx context.Context, biz, phone string) error {
 	code := svc.generateCode()
 	err := svc.repo.Store(ctx, biz, phone, code)
