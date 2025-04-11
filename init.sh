@@ -107,3 +107,13 @@ wrk -t1 -d1s -c1 -s ./scripts/wrk/signup.lua http://192.168.3.97:8080/users/sign
 # Transfer/sec:      9.93KB
 # Avg 平均响应时间，Stdev 标准差，Max 最大响应时间，+/- Stdev 74.36% 
 # Req/Sec 每秒请求数，Transfer/sec 每秒传输数据量
+
+
+# Install wire 
+go install github.com/google/wire/cmd/wire@latest
+echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
+source ~/.bashrc
+# exe cmd 
+wire gen .
+#样例目录 /root/study/wire
+# 每次修改wire 依赖代码都得重新wire gen . 依赖注入的主代码需要带有//go:build wireinject 标签用来定位
